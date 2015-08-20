@@ -1,0 +1,220 @@
+<!--
+ Webcomponents to manage data from a google map. Returns latitude and longitude
+ @version v0.0.1 - 2015-08-20
+ @link https://github.com/gigigo-html5/gig-input-map
+ @author Pedro José Peña Jerez <pedro.jose@gigigo.com>
+ @license MIT License, http://www.opensource.org/licenses/MIT
+ -->
+
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../google-map/google-map.html">
+<link rel="import" href="../google-map/google-map-search.html">
+<link rel="import" href="../gig-input/gig-input.html">
+<link rel="import" href="../gig-button/gig-button.html">
+<script src="../i18next/i18next.js"></script>
+
+<dom-module id="gig-input-map">
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        google-map {
+            height: var(--map-height, 300px);
+        }
+
+
+        div > .column {
+            display: inline-block;
+            width: 50%;
+            float: left;
+            padding: 10px 0;
+        }
+
+        div > .column:first-child {
+            padding-right: 5px;
+        }
+
+        div > .column:last-child {
+            padding-left: 5px;
+        }
+
+        .controls {
+            display: -webkit-flex;
+            -webkit-align-items: center;
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .controls gig-button {
+            margin-left: 10px;
+        }
+
+        .controls .field {
+            width: 100%;
+        }
+
+
+    </style>
+
+    <template>
+        <div class="controls">
+            <div class="field">
+                <gig-input id="address" placeholder="{{txtAddress}}" value="{{address}}"
+                           on-click="addressClick"></gig-input>
+            </div>
+            <div>
+                <gig-button class="btn-animate btn-animate-vertical btn-primary" on-click="search"
+                            icon="fa-search">{{txtSearch}}</gig-button>
+            </div>
+
+        </div>
+
+        <google-map id="map" latitude="40.4379543" longitude="-3.6795366">
+            <google-map-marker id="marker" title="{{txtMarker}}"></google-map-marker>
+        </google-map>
+
+        <div>
+            <div class="column">
+                <gig-input placeholder="latitude" readonly value="{{latitude}}"></gig-input>
+            </div>
+            <div class="column">
+                <gig-input placeholder="longitude" readonly value="{{longitude}}"></gig-input>
+            </div>
+        </div>
+
+        <input type="hidden" name="{{name}}" class="mapField" value="{{value}}" />
+
+    </template>
+
+    <script>
+        (function() {
+
+            var geocoder;
+            var autocomplete;
+            var self;
+
+
+            Polymer({
+                listeners: {
+                    'google-map-drag': 'drag',
+                    'google-map-ready': 'readyMap'
+                },
+                readyMap: function () {
+                    geocoder = new google.maps.Geocoder();
+                    autocomplete = new google.maps.places.Autocomplete(this.$.address.inputElement);
+
+                    google.maps.event.addListener(autocomplete, 'place_changed', function () {
+
+                        self.latitude = autocomplete.getPlace().geometry.location.lat();
+                        self.longitude = autocomplete.getPlace().geometry.location.lng();
+                        self.address = autocomplete.getPlace().formatted_address;
+                    });
+
+                    this._changePosition();
+                },
+                search: function () {
+                    this._changeAddress(this.address);
+                },
+                addressClick: function(e) {
+                    e.target.select();
+                },
+                ready: function () {
+
+                    self = this;
+
+                    i18n.init({ lng: 'en' }, function() {
+                        self.txtSearch = i18n.t('search');
+                        self.txtMarker = i18n.t('marker');
+                        self.txtAddress = i18n.t('address');
+                    });
+
+                    this.$.map.dragEvents = true;
+
+                    if (this.value) {
+                        var position = this.value.split(',');
+
+                        if (position[0] != '') {
+                            this.$.map.latitude = position[0];
+                        }
+
+                        if (position[1] != '') {
+                            this.$.map.longitude = position[1];
+                        }
+                    }
+
+                    this.latitude = this.$.map.latitude;
+                    this.longitude = this.$.map.longitude;
+
+                },
+                drag: function (e) {
+                    this.latitude = this.$.map.latitude;
+                    this.longitude = this.$.map.longitude;
+                },
+                _changeAddress: function (value) {
+                    if (value) {
+
+                        console.log(value);
+
+                        geocoder.geocode({'address': value}, function (results, status) {
+                            if (results) {
+                                self.latitude = results[0].geometry.location.lat();
+                                self.longitude = results[0].geometry.location.lng();
+                            }
+                        });
+                    }
+                },
+                _changePosition: function () {
+                    if (geocoder) {
+                        var latlng = new google.maps.LatLng(self.latitude, self.longitude);
+
+                        geocoder.geocode({'location': latlng}, function (results, status) {
+                            if (results) {
+                                if (results.length > 0) {
+                                    self.address = results[0].formatted_address;
+                                }
+                            }
+                        });
+                    }
+                },
+                _changeLatitude: function (value) {
+                    if (value) {
+                        this.$.map.latitude = this.latitude;
+                        this.$.map.longitude = this.longitude;
+                        this.$.marker.latitude = this.latitude;
+                        this.$.marker.longitude = this.longitude;
+                        this.value = this.$.map.latitude + ',' + this.$.map.longitude;
+
+                        this._changePosition();
+                    }
+                },
+                properties: {
+                    longitude: {
+                        type: String,
+                        notify: true,
+                        observer: '_changeLatitude'
+                    },
+                    latitude: {
+                        type: String,
+                        notify: true
+                    },
+                    address: {
+                        type: String,
+                        notify: true
+                    },
+                    name: {
+                        type: String,
+                        notify: true
+                    },
+                    value: {
+                        type: String,
+                        notify: true
+                    }
+                }
+            })
+        })();
+    </script>
+
