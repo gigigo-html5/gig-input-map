@@ -1,0 +1,23 @@
+{
+  "name": "gig-checkbox",
+  "version": "0.0.1",
+  "homepage": "https://github.com/gigigo-html5/gig-checkbox",
+  "authors": [
+    "Pedro Peña <pedro.jose@gigigo.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "~1.0.9",
+    "google-map": "GoogleWebComponents/google-map#~1.0.3",
+    "i18next": "~1.10.2",
+    "gig-button": "~0.0.1",
+    "gig-input": "~0.0.1"
+  }
+}
